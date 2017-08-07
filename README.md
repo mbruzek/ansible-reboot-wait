@@ -5,21 +5,24 @@ for systems to boot.
 
 I had significant trouble getting the task to wait for boot to complete without
 error. I created this repository as the smallest example of my issue and took
-my questions to #ansible on irc.freenode.net.
+my questions to the #ansible on [Freenode IRC](https://freenode.net/).
 
-Many thanks to [@halberom](https://github.com/halberom) for working with me to
-resolve the issue that is detailed below!
+Many thanks to [@halberom](https://github.com/halberom) for working with me on
+IRC to resolve the issue that is detailed below!
 
 ### TL; DR
-The `local_action` task waits for the systems to boot fails when forced to
-use an ssh connection, it should be "local".
+The `local_action` task failed because the playbook set "ansible_connection" to
+"ssh" and that forced _all_ tasks to use an ssh connection type. The
+`local_action` task should use an "ansible_connection" with value of "local"
+for local connection type.
 
 ## Problem
 I was testing Ansible with some Raspberry Pi machines and needed to reboot the
 systems to pick up changes that were made.
 
-Since a new Raspberry Pi does not have any authorized ssh keys, I configured
-the playbook to use ssh with the default user and password as variables.
+Since a new Raspberry Pi does not have any authorized ssh keys on the default
+image, I configured the playbook to use ssh with the default user and password
+as variables for the entire playbook.
 
 ```yml
 vars:
@@ -28,13 +31,19 @@ vars:
   ansible_ssh_pass: raspberry
 ```
 
-The first task reboots the systems. This required using `async`, `poll` and
-`ignore_errors` to execute the reboot command that will terminate the ssh
-connection.
+### Reboot
+The first task used a shell command to reboot the systems. This task always
+worked fine but has a few things you should know. Rebooting properly required
+using "async", "poll" and "ignore_errors" attributes to execute the reboot
+without errors because the command eventually terminates the ssh connection.
+Ansible does not like loosing the connection, so you ignore errors, run the
+command asynchronously and never poll for results.
 
-I found a verified solution on the Internet for a second task that used a
-`local_action` and `wait_for` directive in the task. This did not work for my
-playbook and I did not understand why. Here is the solution as it was written:
+### Wait for Boot
+I found a _verified_ solution on the Internet for a second task that used a
+`local_action` and "wait_for" directive in the task. This solution did not work
+for my playbook and I did not understand why. Here is the solution as it was
+written:
 
 ```yml
 - name: Wait for system to boot
@@ -48,8 +57,8 @@ playbook and I did not understand why. Here is the solution as it was written:
     timeout: 300
 ```
 
-As it turns out this task failed because the `ansible_connection` was set to
-`ssh` for the entire playbook. When the `local_action` tried to connect to the
+As it turns out this task failed because the "ansible_connection" was set to
+"ssh" for the entire playbook. When the `local_action` tried to connect to the
 localhost via ssh the task failed with the error:
 ```
 TASK [Wait for system to boot] **************************************************************************
@@ -59,9 +68,11 @@ fatal: [192.168.1.125]: UNREACHABLE! => {"changed": false, "msg": "Failed to con
 ```
 
 ## Solution
-The solution is to change `ansible_connection` to "local" for the `local_action`
-task. This can be done by setting a task level variable or removing the
-ssh set in the beginning.
+The solution is to change "ansible_connection" to "local" for the
+`local_action` task. This can be done by setting a task level variable or
+removing the ssh set in the beginning. Read more about
+[other connection types](http://docs.ansible.com/ansible/latest/intro_inventory.html#non-ssh-connection-types)
+in Ansible.
 
 ```yml
 - name: Wait for system to boot
@@ -76,9 +87,11 @@ ssh set in the beginning.
     delay: 15
     timeout: 300
 ```
+I am going to leave this repository out there in hopes it helps someone else
+understand how to reboot a system and wait for the next boot using Ansible.
 
 ## Research
-
+Here is the research I found before contacting the team on IRC:
 * https://github.com/ansible/ansible/issues/14413
 * https://gist.github.com/infernix/a968f23c4f4e1d6723e4
 * https://stackoverflow.com/questions/23877781/how-to-wait-for-server-restart-using-ansible
