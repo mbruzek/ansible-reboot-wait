@@ -7,11 +7,11 @@ I had significant trouble getting the task to wait for boot to complete without
 error. I created this repository as the smallest example of my issue and took
 my questions to #ansible on irc.freenode.net.
 
-Many thanks to @halberom for working with me to resolve the issue that is
-detailed below!
+Many thanks to [@halberom](https://github.com/halberom) for working with me to
+resolve the issue that is detailed below!
 
 ### TL; DR
-The local_action task that waits for the systems to boot fails when forced to
+The `local_action` task waits for the systems to boot fails when forced to
 use an ssh connection, it should be "local".
 
 ## Problem
@@ -28,12 +28,13 @@ vars:
   ansible_ssh_pass: raspberry
 ```
 
-The first task reboots the systems. This required using `aysnc`, `poll` and
-`ignore_errors` to fire the reboot command that will terminate the ssh
+The first task reboots the systems. This required using `async`, `poll` and
+`ignore_errors` to execute the reboot command that will terminate the ssh
 connection.
 
-I found a verified solution on the internet that used a `local_action` and
-`wait_for` directive in the task. This did not work for my playbook and I was
+I found a verified solution on the Internet for a second task that used a
+`local_action` and `wait_for` directive in the task. This did not work for my
+playbook and I did not understand why. Here is the solution as it was written:
 
 ```yml
 - name: Wait for system to boot
@@ -47,9 +48,9 @@ I found a verified solution on the internet that used a `local_action` and
     timeout: 300
 ```
 
-As it turns out this was because the `ansible_connection` was set to `ssh` for
-the entire playbook. When the local_action tried to connect to the localhost
-via ssh the task failed with the error:
+As it turns out this task failed because the `ansible_connection` was set to
+`ssh` for the entire playbook. When the `local_action` tried to connect to the
+localhost via ssh the task failed with the error:
 ```
 TASK [Wait for system to boot] **************************************************************************
 fatal: [192.168.1.159]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: ssh: connect to host localhost port 22: Connection refused\r\n", "unreachable": true}
@@ -59,7 +60,7 @@ fatal: [192.168.1.125]: UNREACHABLE! => {"changed": false, "msg": "Failed to con
 
 ## Solution
 The solution is to change `ansible_connection` to "local" for the `local_action`
-action. This can be done by setting a task level variable or removing the
+task. This can be done by setting a task level variable or removing the
 ssh set in the beginning.
 
 ```yml
