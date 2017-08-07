@@ -4,14 +4,14 @@
   vars:
     ansible_connection: ssh
     ansible_ssh_user: pi
-    ansible_ssh_pass: ansible4me
+    ansible_ssh_pass: raspberry
 
   tasks:
 
     - name: Restart the system
       become: true
       shell: sleep 2 && shutdown -r now "Ansbile requested system reboot"
-      async: 1000
+      async: 1
       poll: 0
       ignore_errors: true
 
