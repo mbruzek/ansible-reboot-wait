@@ -17,6 +17,8 @@
 
     - name: Wait for system to boot
       become: false
+      vars:
+        ansible_connection: local
       local_action: wait_for
       args:
         host: "{{ inventory_hostname }}"
