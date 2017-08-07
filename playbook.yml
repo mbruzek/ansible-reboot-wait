@@ -1,0 +1,26 @@
+- name: A playbook to test the rebooting of systems from Ansible
+  hosts: raspberrypis
+
+  vars:
+    ansible_connection: ssh
+    ansible_ssh_user: pi
+    ansible_ssh_pass: ansible4me
+
+  tasks:
+
+    - name: Restart the system
+      become: true
+      shell: sleep 2 && shutdown -r now "Ansbile requested system reboot"
+      async: 1000
+      poll: 0
+      ignore_errors: true
+
+    - name: Wait for system to boot
+      become: false
+      local_action: wait_for
+      args:
+        host: "{{ inventory_hostname }}"
+        port: 22
+        state: started
+        delay: 15
+        timeout: 300
