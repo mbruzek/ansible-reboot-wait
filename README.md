@@ -1,7 +1,7 @@
 # Ansible reboot and wait for boot
 
-This is the smallest Ansible project with two tasks one to reboot systems, and
-the wait for systems to boot.
+This is a small Ansible project with two tasks one to reboot systems, and wait
+for systems to boot.
 
 I had significant trouble getting the task to wait for boot to complete without
 error. I created this repository as the smallest example of my issue and took
@@ -10,9 +10,16 @@ my questions to #ansible on irc.freenode.net.
 Many thanks to @halberom for working with me to resolve the issue that is
 detailed below!
 
+### TL; DR
+The local_action task that waits for the systems to boot fails when forced to
+use an ssh connection, it should be "local".
+
 ## Problem
-I was testing Ansible with some raspberry pi machines and needed to reboot to
-pick up changes that were made.
+I was testing Ansible with some Raspberry Pi machines and needed to reboot the
+systems to pick up changes that were made.
+
+Since a new Raspberry Pi does not have any authorized ssh keys, I configured
+the playbook to use ssh with the default user and password as variables.
 
 ```yml
 vars:
@@ -20,7 +27,13 @@ vars:
   ansible_ssh_user: pi
   ansible_ssh_pass: raspberry
 ```
-Using the `local_action` and `wait_for` task did not work for my playbook.
+
+The first task reboots the systems. This required using `aysnc`, `poll` and
+`ignore_errors` to fire the reboot command that will terminate the ssh
+connection.
+
+I found a verified solution on the internet that used a `local_action` and
+`wait_for` directive in the task. This did not work for my playbook and I was
 
 ```yml
 - name: Wait for system to boot
