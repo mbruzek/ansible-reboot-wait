@@ -1,3 +1,14 @@
-[raspberrypis]
+[modelBv1]
+192.168.1.21
+192.168.1.207
+
+[modelBv3]
 192.168.1.159
+
+[zeroW]
 192.168.1.125
+
+[raspberrypis:children]
+modelBv1
+modelBv3
+zeroW
